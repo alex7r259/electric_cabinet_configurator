@@ -14,21 +14,29 @@
         <button class="step">2. Конфигурация</button>
         <button class="step">3. Проверка и заказ</button>
       </nav>
+      <button class="btn secondary" id="toggle-admin">Админ-панель</button>
     </header>
 
-    <main class="layout">
+    <main id="user-app" class="layout">
       <aside class="panel panel-left">
-        <h2>Добавить компонент</h2>
-        <p class="panel-note">Перетаскивайте компонент из списка на DIN-рейку в центре.</p>
+        <h2>Каталог наполнения</h2>
+
+        <div class="filters">
+          <input id="filter-search" placeholder="Поиск по названию" />
+          <select id="filter-category">
+            <option value="">Все категории</option>
+          </select>
+        </div>
+
+        <div class="overview-box">
+          <div class="overview-title">Общий вид наполнения</div>
+          <img id="overview-image" alt="Общий вид наполнения щита" />
+        </div>
+
         <div id="component-list" class="component-list"></div>
       </aside>
 
       <section class="panel panel-center">
-        <div class="mode-switch">
-          <button class="mode is-active">Самостоятельно</button>
-          <button class="mode" id="helper-mode">По нагрузке (помощник)</button>
-        </div>
-
         <section class="config-form">
           <h3>Параметры щита</h3>
           <label class="field">
@@ -52,6 +60,7 @@
 
           <div class="entry-breaker" id="entry-breaker-hint"></div>
           <button id="set-entry-breaker" class="btn secondary">Применить вводной автомат</button>
+          <button id="helper-mode" class="btn secondary">По нагрузке (помощник)</button>
         </section>
 
         <article class="board-visual">
@@ -59,8 +68,8 @@
             <h3>Щит (drag & drop)</h3>
             <span id="module-status"></span>
           </div>
+          <img id="enclosure-photo" class="enclosure-photo" alt="Фото корпуса щита" />
           <div class="cabinet" id="cabinet"></div>
-          <p class="hint">Поддерживается перетаскивание из каталога на свободные модули и перемещение внутри щита.</p>
         </article>
       </section>
 
@@ -76,16 +85,56 @@
         </div>
 
         <button id="order-btn" class="btn primary">Далее: проверка и заказ</button>
-        <p class="safe">Гарантия на сборку 12 месяцев · Соответствие ГОСТ и ПУЭ</p>
       </aside>
     </main>
 
+    <section id="admin-app" class="admin hidden panel">
+      <h2>Админ-панель</h2>
+      <p class="panel-note">Редактирование каталогов, фото, цен и заказов. Данные сохраняются в LocalStorage.</p>
+
+      <div class="admin-grid">
+        <section class="admin-card">
+          <h3>Каталог щитов</h3>
+          <form id="enclosure-form" class="admin-form">
+            <input name="name" placeholder="Название" required />
+            <input name="modules" type="number" min="1" placeholder="Модули" required />
+            <input name="price" type="number" min="0" placeholder="Цена" required />
+            <input name="image" placeholder="URL фото (опционально)" />
+            <input name="imageFile" type="file" accept="image/*" />
+            <button class="btn secondary" type="submit">Сохранить щит</button>
+          </form>
+          <div id="enclosure-admin-list" class="admin-list"></div>
+        </section>
+
+        <section class="admin-card">
+          <h3>Каталог наполнения</h3>
+          <form id="component-form" class="admin-form">
+            <input name="name" placeholder="Название" required />
+            <input name="category" placeholder="Категория (Автомат/УЗО...)" required />
+            <input name="modules" type="number" min="1" placeholder="Модули" required />
+            <input name="price" type="number" min="0" placeholder="Цена" required />
+            <input name="image" placeholder="URL фото компонента" />
+            <input name="overviewImage" placeholder="URL фото общего вида (слева)" />
+            <input name="imageFile" type="file" accept="image/*" />
+            <input name="overviewFile" type="file" accept="image/*" />
+            <button class="btn secondary" type="submit">Сохранить компонент</button>
+          </form>
+          <div id="component-admin-list" class="admin-list"></div>
+        </section>
+      </div>
+
+      <section class="admin-card">
+        <h3>Заказы</h3>
+        <div id="orders-admin-list" class="admin-list"></div>
+      </section>
+    </section>
+
     <template id="component-card-template">
       <button class="component-card" type="button" draggable="true">
+        <img class="thumb" alt="" />
         <div class="title"></div>
         <div class="meta"></div>
         <div class="row">
-          <span class="stock">В наличии</span>
           <strong class="price"></strong>
         </div>
       </button>
@@ -95,7 +144,7 @@
       <form method="dialog" class="order-form" id="order-form">
         <h3>Оформить заказ на сборку</h3>
         <label>Имя <input name="name" required /></label>
-        <label>Телефон <input name="phone" required placeholder="+7 (___) ___-__-__" /></label>
+        <label>Телефон <input name="phone" required /></label>
         <label>Комментарий <textarea name="comment"></textarea></label>
         <menu>
           <button value="cancel" class="btn secondary" type="button" id="close-dialog">Отмена</button>

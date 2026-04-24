@@ -1,97 +1,105 @@
-const enclosures = [
-  { id: 'enc-12', name: 'Навесной, 12 модулей', modules: 12, price: 2800 },
-  { id: 'enc-24', name: 'Навесной, 24 модуля', modules: 24, price: 4350 },
-  { id: 'enc-36', name: 'Встраиваемый, 36 модулей', modules: 36, price: 6500 },
+const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380"><rect width="100%" height="100%" fill="#dbe3ef"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="28" fill="#64748b">Нет фото</text></svg>');
+
+const defaultEnclosures = [
+  { id: 'enc-12', name: 'Навесной, 12 модулей', modules: 12, price: 2800, image: PLACEHOLDER },
+  { id: 'enc-24', name: 'Навесной, 24 модуля', modules: 24, price: 4350, image: PLACEHOLDER },
+  { id: 'enc-36', name: 'Встраиваемый, 36 модулей', modules: 36, price: 6500, image: PLACEHOLDER },
 ];
 
-const catalog = [
-  { id: 'br-abb-c16', name: 'Автомат ABB S201 C16', category: 'Автомат', modules: 1, price: 620 },
-  { id: 'br-sch-c16', name: 'Автомат Schneider Easy9 C16', category: 'Автомат', modules: 1, price: 560 },
-  { id: 'uzo-abb-40', name: 'УЗО ABB F202 AC 40A 30mA', category: 'УЗО', modules: 2, price: 3200 },
-  { id: 'uzo-sch-40', name: 'УЗО Schneider Easy9 40A 30mA', category: 'УЗО', modules: 2, price: 2950 },
-  { id: 'relay-zubr-d40', name: 'Реле напряжения ZUBR D40', category: 'Реле', modules: 2, price: 4250 },
-  { id: 'dif-abb-c16', name: 'Диффавтомат ABB DS201 C16 30mA', category: 'Прочее', modules: 2, price: 2950 },
-  { id: 'spd-opc', name: 'ОПСC1-D 1P', category: 'Прочее', modules: 1, price: 1250 },
+const defaultComponents = [
+  { id: 'br-abb-c16', name: 'Автомат ABB S201 C16', category: 'Автомат', modules: 1, price: 620, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'uzo-abb-40', name: 'УЗО ABB F202 AC 40A 30mA', category: 'УЗО', modules: 2, price: 3200, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'relay-zubr-d40', name: 'Реле напряжения ZUBR D40', category: 'Реле', modules: 2, price: 4250, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
 ];
 
 const state = {
-  enclosureId: enclosures[1].id,
+  enclosures: loadStore('ec_enclosures', defaultEnclosures),
+  components: loadStore('ec_components', defaultComponents),
+  orders: loadStore('ec_orders', []),
+  enclosureId: null,
   phases: 1,
   loadKw: 15,
   entryBreaker: null,
   placements: [],
+  filterSearch: '',
+  filterCategory: '',
+  selectedOverviewImage: PLACEHOLDER,
 };
-
-const enclosureSelect = document.querySelector('#enclosure-select');
-const phaseSelect = document.querySelector('#phase-select');
-const loadInput = document.querySelector('#load-input');
-const entryBreakerHint = document.querySelector('#entry-breaker-hint');
-const componentList = document.querySelector('#component-list');
-const summaryLines = document.querySelector('#summary-lines');
-const cabinet = document.querySelector('#cabinet');
-const moduleStatus = document.querySelector('#module-status');
-
-const componentsTotalEl = document.querySelector('#components-total');
-const enclosureTotalEl = document.querySelector('#enclosure-total');
-const assemblyTotalEl = document.querySelector('#assembly-total');
-const grandTotalEl = document.querySelector('#grand-total');
-
-const setEntryBreakerBtn = document.querySelector('#set-entry-breaker');
-const helperModeBtn = document.querySelector('#helper-mode');
-const orderBtn = document.querySelector('#order-btn');
-const orderDialog = document.querySelector('#order-dialog');
-const closeDialogBtn = document.querySelector('#close-dialog');
-const orderForm = document.querySelector('#order-form');
 
 const MODULES_PER_ROW = 12;
 
-const formatMoney = (value) => `${new Intl.NumberFormat('ru-RU').format(value)} ₽`;
-const uid = () => `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+const el = {
+  userApp: document.querySelector('#user-app'),
+  adminApp: document.querySelector('#admin-app'),
+  toggleAdmin: document.querySelector('#toggle-admin'),
+  enclosureSelect: document.querySelector('#enclosure-select'),
+  phaseSelect: document.querySelector('#phase-select'),
+  loadInput: document.querySelector('#load-input'),
+  entryBreakerHint: document.querySelector('#entry-breaker-hint'),
+  componentList: document.querySelector('#component-list'),
+  filterSearch: document.querySelector('#filter-search'),
+  filterCategory: document.querySelector('#filter-category'),
+  overviewImage: document.querySelector('#overview-image'),
+  cabinet: document.querySelector('#cabinet'),
+  enclosurePhoto: document.querySelector('#enclosure-photo'),
+  moduleStatus: document.querySelector('#module-status'),
+  summaryLines: document.querySelector('#summary-lines'),
+  componentsTotal: document.querySelector('#components-total'),
+  enclosureTotal: document.querySelector('#enclosure-total'),
+  assemblyTotal: document.querySelector('#assembly-total'),
+  grandTotal: document.querySelector('#grand-total'),
+  setEntryBreaker: document.querySelector('#set-entry-breaker'),
+  helperMode: document.querySelector('#helper-mode'),
+  orderBtn: document.querySelector('#order-btn'),
+  orderDialog: document.querySelector('#order-dialog'),
+  closeDialog: document.querySelector('#close-dialog'),
+  orderForm: document.querySelector('#order-form'),
+  enclosureForm: document.querySelector('#enclosure-form'),
+  componentForm: document.querySelector('#component-form'),
+  enclosureAdminList: document.querySelector('#enclosure-admin-list'),
+  componentAdminList: document.querySelector('#component-admin-list'),
+  ordersAdminList: document.querySelector('#orders-admin-list'),
+};
+
+function loadStore(key, fallback) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return structuredClone(fallback);
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return structuredClone(fallback);
+  }
+}
+
+function saveStore() {
+  localStorage.setItem('ec_enclosures', JSON.stringify(state.enclosures));
+  localStorage.setItem('ec_components', JSON.stringify(state.components));
+  localStorage.setItem('ec_orders', JSON.stringify(state.orders));
+}
+
+function uid(prefix = 'id') {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 9999)}`;
+}
+
+function formatMoney(v) {
+  return `${new Intl.NumberFormat('ru-RU').format(v)} ₽`;
+}
 
 function getCurrentEnclosure() {
-  return enclosures.find((box) => box.id === state.enclosureId);
-}
-
-function getAllInstalled() {
-  return state.placements.filter((x) => x);
-}
-
-function estimateEntryBreaker(loadKw, phases) {
-  const voltage = phases === 3 ? 380 : 220;
-  const current = Math.ceil((loadKw * 1000) / (voltage * (phases === 3 ? 1.73 : 1)));
-  const nominal = [16, 20, 25, 32, 40, 50, 63, 80, 100].find((n) => current <= n) || 100;
-  const poles = phases === 3 ? 3 : 2;
-  const price = 950 + nominal * 8 + (poles === 3 ? 380 : 120);
-  return {
-    id: `entry-${phases}-${nominal}`,
-    name: `Вводной автомат ${poles}P C${nominal}`,
-    category: 'Вводной автомат',
-    modules: poles,
-    price,
-    nominal,
-    poles,
-    current,
-  };
+  return state.enclosures.find((e) => e.id === state.enclosureId) || state.enclosures[0];
 }
 
 function ensurePlacementSize() {
   const modules = getCurrentEnclosure().modules;
-  const next = Array.from({ length: modules }, (_, i) => state.placements[i] || null);
-  state.placements = next;
+  state.placements = Array.from({ length: modules }, (_, i) => state.placements[i] || null);
 }
 
-function rowStart(index) {
-  return Math.floor(index / MODULES_PER_ROW) * MODULES_PER_ROW;
-}
+function rowStart(index) { return Math.floor(index / MODULES_PER_ROW) * MODULES_PER_ROW; }
 
 function canPlace(item, startIndex, ignoreKey = null) {
   const total = getCurrentEnclosure().modules;
   if (startIndex < 0 || startIndex + item.modules > total) return false;
-
-  const startRow = rowStart(startIndex);
-  const endRow = rowStart(startIndex + item.modules - 1);
-  if (startRow !== endRow) return false;
-
+  if (rowStart(startIndex) !== rowStart(startIndex + item.modules - 1)) return false;
   for (let i = 0; i < item.modules; i += 1) {
     const cell = state.placements[startIndex + i];
     if (!cell) continue;
@@ -101,14 +109,9 @@ function canPlace(item, startIndex, ignoreKey = null) {
   return true;
 }
 
-function putItem(item, startIndex, instanceKey = uid()) {
+function putItem(item, startIndex, instanceKey = uid('cmp')) {
   for (let i = 0; i < item.modules; i += 1) {
-    state.placements[startIndex + i] = {
-      ...item,
-      anchor: i === 0,
-      startIndex,
-      instanceKey,
-    };
+    state.placements[startIndex + i] = { ...item, anchor: i === 0, startIndex, instanceKey };
   }
 }
 
@@ -116,267 +119,366 @@ function clearItem(instanceKey) {
   state.placements = state.placements.map((cell) => (cell?.instanceKey === instanceKey ? null : cell));
 }
 
-function getUsedModules() {
-  const entryModules = state.entryBreaker?.modules || 0;
-  return entryModules + getAllInstalled().length;
+function estimateEntryBreaker(loadKw, phases) {
+  const voltage = phases === 3 ? 380 : 220;
+  const current = Math.ceil((loadKw * 1000) / (voltage * (phases === 3 ? 1.73 : 1)));
+  const nominal = [16, 20, 25, 32, 40, 50, 63, 80, 100].find((n) => current <= n) || 100;
+  const poles = phases === 3 ? 3 : 2;
+  return { id: uid('entry'), name: `Вводной автомат ${poles}P C${nominal}`, modules: poles, price: 900 + nominal * 8 + poles * 120 };
 }
 
-function getAssemblyCost() {
-  const base = 2500;
-  const installedCount = state.placements.filter((x) => x?.anchor).length;
-  const perItem = installedCount * 140;
-  const phasesFactor = state.phases === 3 ? 850 : 0;
-  return base + perItem + phasesFactor;
-}
-
-function renderEnclosures() {
-  enclosureSelect.innerHTML = '';
-  enclosures.forEach((item) => {
-    const option = document.createElement('option');
-    option.value = item.id;
-    option.textContent = `${item.name} · ${formatMoney(item.price)}`;
-    enclosureSelect.append(option);
+function visibleComponents() {
+  return state.components.filter((c) => {
+    const q = state.filterSearch.toLowerCase();
+    const searchOk = !q || c.name.toLowerCase().includes(q);
+    const catOk = !state.filterCategory || c.category === state.filterCategory;
+    return searchOk && catOk;
   });
-  enclosureSelect.value = state.enclosureId;
+}
+
+function renderFilters() {
+  const categories = [...new Set(state.components.map((x) => x.category).filter(Boolean))];
+  el.filterCategory.innerHTML = '<option value="">Все категории</option>';
+  categories.forEach((cat) => {
+    const option = document.createElement('option');
+    option.value = cat;
+    option.textContent = cat;
+    if (cat === state.filterCategory) option.selected = true;
+    el.filterCategory.append(option);
+  });
+}
+
+function renderEnclosureSelect() {
+  if (!state.enclosures.length) return;
+  if (!state.enclosureId || !state.enclosures.some((e) => e.id === state.enclosureId)) state.enclosureId = state.enclosures[0].id;
+  el.enclosureSelect.innerHTML = '';
+  state.enclosures.forEach((e) => {
+    const option = document.createElement('option');
+    option.value = e.id;
+    option.textContent = `${e.name} · ${formatMoney(e.price)}`;
+    if (e.id === state.enclosureId) option.selected = true;
+    el.enclosureSelect.append(option);
+  });
 }
 
 function renderCatalog() {
-  componentList.innerHTML = '';
   const template = document.querySelector('#component-card-template');
-  catalog.forEach((item) => {
+  el.componentList.innerHTML = '';
+  visibleComponents().forEach((item) => {
     const node = template.content.firstElementChild.cloneNode(true);
+    node.querySelector('.thumb').src = item.image || PLACEHOLDER;
     node.querySelector('.title').textContent = item.name;
     node.querySelector('.meta').textContent = `${item.category} · ${item.modules} мод.`;
     node.querySelector('.price').textContent = formatMoney(item.price);
+
     node.addEventListener('dragstart', (event) => {
       event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'catalog', itemId: item.id }));
     });
     node.addEventListener('click', () => {
-      const idx = state.placements.findIndex((slot) => !slot);
+      state.selectedOverviewImage = item.overviewImage || item.image || PLACEHOLDER;
+      const idx = state.placements.findIndex((x) => !x);
       if (idx >= 0 && canPlace(item, idx)) {
         putItem(item, idx);
-        renderAll();
+        renderUser();
+      } else {
+        renderUser();
       }
     });
-    componentList.append(node);
+    el.componentList.append(node);
   });
-}
-
-function renderEntryBreakerHint() {
-  const suggestion = estimateEntryBreaker(Number(state.loadKw), Number(state.phases));
-  const enclosure = getCurrentEnclosure();
-  const used = getUsedModules();
-  entryBreakerHint.textContent = `Рекомендуемый вводной автомат: ${suggestion.name} (${suggestion.current}A расчетный ток).`
-    + ` Корпус: ${enclosure.modules} модулей, занято: ${used}.`;
 }
 
 function onSlotDrop(event, slotIndex) {
   event.preventDefault();
   event.currentTarget.classList.remove('drop-hover');
   let payload;
-  try {
-    payload = JSON.parse(event.dataTransfer.getData('text/plain'));
-  } catch {
-    return;
-  }
-  if (!payload) return;
+  try { payload = JSON.parse(event.dataTransfer.getData('text/plain')); } catch { return; }
 
   if (payload.type === 'catalog') {
-    const item = catalog.find((x) => x.id === payload.itemId);
+    const item = state.components.find((x) => x.id === payload.itemId);
     if (item && canPlace(item, slotIndex)) {
       putItem(item, slotIndex);
+      state.selectedOverviewImage = item.overviewImage || item.image || PLACEHOLDER;
     }
   }
 
   if (payload.type === 'placed') {
     const oldCell = state.placements[payload.fromIndex];
     if (!oldCell) return;
-    const movingItem = { ...oldCell };
+    const moved = { ...oldCell };
     clearItem(oldCell.instanceKey);
-    if (canPlace(movingItem, slotIndex, oldCell.instanceKey)) {
-      putItem(movingItem, slotIndex, oldCell.instanceKey);
-    } else {
-      putItem(movingItem, oldCell.startIndex, oldCell.instanceKey);
-    }
+    if (canPlace(moved, slotIndex, oldCell.instanceKey)) putItem(moved, slotIndex, oldCell.instanceKey);
+    else putItem(moved, oldCell.startIndex, oldCell.instanceKey);
   }
-
-  renderAll();
+  renderUser();
 }
 
 function renderCabinet() {
-  cabinet.innerHTML = '';
+  el.cabinet.innerHTML = '';
   const total = getCurrentEnclosure().modules;
   const rows = Math.ceil(total / MODULES_PER_ROW);
-
   for (let row = 0; row < rows; row += 1) {
-    const railRow = document.createElement('div');
-    railRow.className = 'rail-row';
-    const railTrack = document.createElement('div');
-    railTrack.className = 'rail-track';
-    railTrack.style.gridTemplateColumns = `repeat(${MODULES_PER_ROW}, minmax(0, 1fr))`;
+    const rail = document.createElement('div');
+    rail.className = 'rail-track';
+    rail.style.gridTemplateColumns = `repeat(${MODULES_PER_ROW}, minmax(0,1fr))`;
 
     for (let col = 0; col < MODULES_PER_ROW; col += 1) {
       const idx = row * MODULES_PER_ROW + col;
       if (idx >= total) break;
-
-      const slot = document.createElement('div');
-      slot.className = 'slot';
-      slot.dataset.slot = String(idx);
-      slot.addEventListener('dragover', (event) => event.preventDefault());
-      slot.addEventListener('dragenter', () => slot.classList.add('drop-hover'));
-      slot.addEventListener('dragleave', () => slot.classList.remove('drop-hover'));
-      slot.addEventListener('drop', (event) => onSlotDrop(event, idx));
-
       const cell = state.placements[idx];
       if (cell?.anchor) {
         const device = document.createElement('div');
         device.className = 'device';
-        device.draggable = true;
         device.style.gridColumn = `span ${cell.modules}`;
-        device.innerHTML = `
-          <div>${cell.name}</div>
-          <div class="mini">${cell.modules} мод. · ${formatMoney(cell.price)}</div>
-          <button class="remove" title="Удалить" type="button">×</button>
-        `;
-        device.addEventListener('dragstart', (event) => {
-          event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', fromIndex: idx }));
-        });
-        device.querySelector('.remove').addEventListener('click', () => {
+        device.draggable = true;
+        device.innerHTML = `<img src="${cell.image || PLACEHOLDER}" alt="" /><div>${cell.name}<div style="color:#64748b">${cell.modules} мод.</div></div><button type="button">×</button>`;
+        device.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', fromIndex: idx })));
+        device.querySelector('button').addEventListener('click', () => {
           clearItem(cell.instanceKey);
-          renderAll();
+          renderUser();
         });
-        railTrack.append(device);
+        rail.append(device);
         col += cell.modules - 1;
       } else if (!cell) {
-        railTrack.append(slot);
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.addEventListener('dragover', (e) => e.preventDefault());
+        slot.addEventListener('dragenter', () => slot.classList.add('drop-hover'));
+        slot.addEventListener('dragleave', () => slot.classList.remove('drop-hover'));
+        slot.addEventListener('drop', (e) => onSlotDrop(e, idx));
+        rail.append(slot);
       }
     }
-
-    railRow.append(railTrack);
-    cabinet.append(railRow);
+    el.cabinet.append(rail);
   }
-
-  const freeModules = getCurrentEnclosure().modules - getUsedModules();
-  moduleStatus.textContent = `Занято ${getUsedModules()} из ${getCurrentEnclosure().modules} · Свободно ${freeModules}`;
 }
 
 function renderSummary() {
-  summaryLines.innerHTML = '';
+  el.summaryLines.innerHTML = '';
   if (state.entryBreaker) {
     const line = document.createElement('div');
     line.className = 'summary-item';
     line.innerHTML = `<span>${state.entryBreaker.name}</span><span>1 шт.</span><strong>${formatMoney(state.entryBreaker.price)}</strong>`;
-    summaryLines.append(line);
+    el.summaryLines.append(line);
   }
-
   state.placements.forEach((cell) => {
     if (!cell?.anchor) return;
     const line = document.createElement('div');
     line.className = 'summary-item';
-    line.innerHTML = `<span>${cell.name}</span><span>1 шт.</span><div><strong>${formatMoney(cell.price)}</strong> <button title="Удалить">×</button></div>`;
-    line.querySelector('button').addEventListener('click', () => {
-      clearItem(cell.instanceKey);
-      renderAll();
-    });
-    summaryLines.append(line);
+    line.innerHTML = `<span>${cell.name}</span><span>1 шт.</span><strong>${formatMoney(cell.price)}</strong>`;
+    el.summaryLines.append(line);
   });
-
-  if (!state.entryBreaker && !state.placements.some(Boolean)) {
-    summaryLines.innerHTML = '<p>Добавьте вводной автомат и перетащите компоненты в щит.</p>';
-  }
 }
 
 function renderTotals() {
-  const componentsTotal = (state.entryBreaker?.price || 0)
-    + state.placements.filter((x) => x?.anchor).reduce((sum, item) => sum + item.price, 0);
-  const enclosureTotal = getCurrentEnclosure().price;
-  const assemblyTotal = getAssemblyCost();
-  const grandTotal = componentsTotal + enclosureTotal + assemblyTotal;
+  const componentsTotal = (state.entryBreaker?.price || 0) + state.placements.filter((x) => x?.anchor).reduce((sum, x) => sum + x.price, 0);
+  const enclosureTotal = getCurrentEnclosure().price || 0;
+  const assemblyTotal = 2500 + state.placements.filter((x) => x?.anchor).length * 140 + (state.phases === 3 ? 850 : 0);
+  const grand = componentsTotal + enclosureTotal + assemblyTotal;
 
-  componentsTotalEl.textContent = formatMoney(componentsTotal);
-  enclosureTotalEl.textContent = formatMoney(enclosureTotal);
-  assemblyTotalEl.textContent = formatMoney(assemblyTotal);
-  grandTotalEl.textContent = formatMoney(grandTotal);
+  el.componentsTotal.textContent = formatMoney(componentsTotal);
+  el.enclosureTotal.textContent = formatMoney(enclosureTotal);
+  el.assemblyTotal.textContent = formatMoney(assemblyTotal);
+  el.grandTotal.textContent = formatMoney(grand);
 
-  const freeModules = getCurrentEnclosure().modules - getUsedModules();
-  orderBtn.disabled = !state.entryBreaker || freeModules < 0;
-  if (freeModules < 0) {
-    orderBtn.textContent = 'Превышено количество модулей';
-    orderBtn.classList.remove('primary');
-    orderBtn.classList.add('secondary');
-  } else {
-    orderBtn.textContent = 'Далее: проверка и заказ';
-    orderBtn.classList.add('primary');
-    orderBtn.classList.remove('secondary');
-  }
+  const used = (state.entryBreaker?.modules || 0) + state.placements.filter(Boolean).length;
+  const free = getCurrentEnclosure().modules - used;
+  el.moduleStatus.textContent = `Занято ${used}/${getCurrentEnclosure().modules}, свободно ${free}`;
+  el.orderBtn.disabled = !state.entryBreaker || free < 0;
 }
 
-function renderAll() {
+function renderAdminLists() {
+  el.enclosureAdminList.innerHTML = '';
+  state.enclosures.forEach((item) => {
+    const card = document.createElement('div');
+    card.className = 'admin-item';
+    card.innerHTML = `<img src="${item.image || PLACEHOLDER}" alt=""><div><strong>${item.name}</strong><div>${item.modules} мод. · ${formatMoney(item.price)}</div></div><div class="actions"><button class="btn secondary" data-edit>Ред.</button><button class="btn secondary" data-del>Удал.</button></div>`;
+    card.querySelector('[data-edit]').addEventListener('click', () => fillEnclosureForm(item));
+    card.querySelector('[data-del]').addEventListener('click', () => {
+      state.enclosures = state.enclosures.filter((x) => x.id !== item.id);
+      saveStore();
+      renderAll();
+    });
+    el.enclosureAdminList.append(card);
+  });
+
+  el.componentAdminList.innerHTML = '';
+  state.components.forEach((item) => {
+    const card = document.createElement('div');
+    card.className = 'admin-item';
+    card.innerHTML = `<img src="${item.image || PLACEHOLDER}" alt=""><div><strong>${item.name}</strong><div>${item.category} · ${item.modules} мод. · ${formatMoney(item.price)}</div></div><div class="actions"><button class="btn secondary" data-edit>Ред.</button><button class="btn secondary" data-del>Удал.</button></div>`;
+    card.querySelector('[data-edit]').addEventListener('click', () => fillComponentForm(item));
+    card.querySelector('[data-del]').addEventListener('click', () => {
+      state.components = state.components.filter((x) => x.id !== item.id);
+      saveStore();
+      renderAll();
+    });
+    el.componentAdminList.append(card);
+  });
+
+  el.ordersAdminList.innerHTML = '';
+  if (!state.orders.length) {
+    el.ordersAdminList.innerHTML = '<div class="panel-note">Заказов пока нет.</div>';
+    return;
+  }
+  state.orders.forEach((order) => {
+    const row = document.createElement('div');
+    row.className = 'admin-item';
+    row.style.gridTemplateColumns = '1fr auto';
+    row.innerHTML = `<div><strong>${order.name}</strong> · ${order.phone}<div>${order.status} · ${formatMoney(order.total)} · ${new Date(order.createdAt).toLocaleString('ru-RU')}</div><div>${order.comment || ''}</div></div><div class="actions"><select><option>Новый</option><option>В работе</option><option>Собран</option><option>Выдан</option></select><button class="btn secondary">Сохранить</button></div>`;
+    const select = row.querySelector('select');
+    select.value = order.status;
+    row.querySelector('button').addEventListener('click', () => {
+      order.status = select.value;
+      saveStore();
+      renderAdminLists();
+    });
+    el.ordersAdminList.append(row);
+  });
+}
+
+function fillEnclosureForm(item) {
+  el.enclosureForm.dataset.editId = item.id;
+  el.enclosureForm.name.value = item.name;
+  el.enclosureForm.modules.value = item.modules;
+  el.enclosureForm.price.value = item.price;
+  el.enclosureForm.image.value = item.image || '';
+}
+
+function fillComponentForm(item) {
+  el.componentForm.dataset.editId = item.id;
+  el.componentForm.name.value = item.name;
+  el.componentForm.category.value = item.category;
+  el.componentForm.modules.value = item.modules;
+  el.componentForm.price.value = item.price;
+  el.componentForm.image.value = item.image || '';
+  el.componentForm.overviewImage.value = item.overviewImage || '';
+}
+
+async function fileToDataUrl(file) {
+  if (!file) return null;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleEnclosureSave(event) {
+  event.preventDefault();
+  const data = new FormData(el.enclosureForm);
+  const imageFile = await fileToDataUrl(data.get('imageFile'));
+  const item = {
+    id: el.enclosureForm.dataset.editId || uid('enc'),
+    name: String(data.get('name')),
+    modules: Number(data.get('modules')),
+    price: Number(data.get('price')),
+    image: imageFile || String(data.get('image') || '') || PLACEHOLDER,
+  };
+
+  if (el.enclosureForm.dataset.editId) state.enclosures = state.enclosures.map((x) => (x.id === item.id ? item : x));
+  else state.enclosures.push(item);
+
+  el.enclosureForm.reset();
+  delete el.enclosureForm.dataset.editId;
+  saveStore();
+  renderAll();
+}
+
+async function handleComponentSave(event) {
+  event.preventDefault();
+  const data = new FormData(el.componentForm);
+  const imageFile = await fileToDataUrl(data.get('imageFile'));
+  const overviewFile = await fileToDataUrl(data.get('overviewFile'));
+  const item = {
+    id: el.componentForm.dataset.editId || uid('cmpcat'),
+    name: String(data.get('name')),
+    category: String(data.get('category')),
+    modules: Number(data.get('modules')),
+    price: Number(data.get('price')),
+    image: imageFile || String(data.get('image') || '') || PLACEHOLDER,
+    overviewImage: overviewFile || String(data.get('overviewImage') || '') || PLACEHOLDER,
+  };
+
+  if (el.componentForm.dataset.editId) state.components = state.components.map((x) => (x.id === item.id ? item : x));
+  else state.components.push(item);
+
+  el.componentForm.reset();
+  delete el.componentForm.dataset.editId;
+  saveStore();
+  renderAll();
+}
+
+function renderUser() {
+  renderEnclosureSelect();
   ensurePlacementSize();
-  renderEntryBreakerHint();
+  renderFilters();
+  renderCatalog();
   renderCabinet();
   renderSummary();
   renderTotals();
+
+  const suggestion = estimateEntryBreaker(Number(state.loadKw), Number(state.phases));
+  el.entryBreakerHint.textContent = `Рекомендуемый вводной автомат: ${suggestion.name}.`; 
+  el.overviewImage.src = state.selectedOverviewImage || PLACEHOLDER;
+  el.enclosurePhoto.src = getCurrentEnclosure().image || PLACEHOLDER;
 }
 
-renderEnclosures();
-renderCatalog();
-renderAll();
+function renderAll() {
+  renderUser();
+  renderAdminLists();
+}
 
-enclosureSelect.addEventListener('change', (event) => {
-  state.enclosureId = event.target.value;
-  ensurePlacementSize();
-  renderAll();
+el.toggleAdmin.addEventListener('click', () => {
+  const isHidden = el.adminApp.classList.contains('hidden');
+  el.adminApp.classList.toggle('hidden', !isHidden);
+  el.userApp.classList.toggle('hidden', !isHidden);
+  el.toggleAdmin.textContent = isHidden ? 'Вернуться в конфигуратор' : 'Админ-панель';
 });
 
-phaseSelect.addEventListener('change', (event) => {
-  state.phases = Number(event.target.value);
-  renderAll();
-});
+el.enclosureSelect.addEventListener('change', (e) => { state.enclosureId = e.target.value; renderUser(); });
+el.phaseSelect.addEventListener('change', (e) => { state.phases = Number(e.target.value); renderUser(); });
+el.loadInput.addEventListener('input', (e) => { state.loadKw = Number(e.target.value) || 1; renderUser(); });
+el.filterSearch.addEventListener('input', (e) => { state.filterSearch = e.target.value; renderUser(); });
+el.filterCategory.addEventListener('change', (e) => { state.filterCategory = e.target.value; renderUser(); });
 
-loadInput.addEventListener('input', (event) => {
-  state.loadKw = Math.max(1, Number(event.target.value) || 1);
-  renderAll();
-});
-
-setEntryBreakerBtn.addEventListener('click', () => {
-  state.entryBreaker = estimateEntryBreaker(state.loadKw, state.phases);
-  renderAll();
-});
-
-helperModeBtn.addEventListener('click', () => {
+el.setEntryBreaker.addEventListener('click', () => { state.entryBreaker = estimateEntryBreaker(state.loadKw, state.phases); renderUser(); });
+el.helperMode.addEventListener('click', () => {
   state.entryBreaker = estimateEntryBreaker(state.loadKw, state.phases);
   state.placements = Array(getCurrentEnclosure().modules).fill(null);
-
-  const seed = state.phases === 3
-    ? ['relay-zubr-d40', 'uzo-abb-40', 'br-abb-c16', 'br-abb-c16', 'spd-opc']
-    : ['uzo-sch-40', 'br-sch-c16', 'br-sch-c16', 'br-sch-c16'];
-
   let cursor = 0;
-  seed.forEach((id) => {
-    const item = catalog.find((x) => x.id === id);
-    if (!item) return;
+  state.components.slice(0, 5).forEach((item) => {
     while (cursor < state.placements.length && !canPlace(item, cursor)) cursor += 1;
-    if (cursor < state.placements.length) {
-      putItem(item, cursor);
-      cursor += item.modules;
-    }
+    if (cursor < state.placements.length) { putItem(item, cursor); cursor += item.modules; }
   });
-  renderAll();
+  renderUser();
 });
 
-orderBtn.addEventListener('click', () => {
-  if (orderBtn.disabled) return;
-  orderDialog.showModal();
-});
+el.orderBtn.addEventListener('click', () => { if (!el.orderBtn.disabled) el.orderDialog.showModal(); });
+el.closeDialog.addEventListener('click', () => el.orderDialog.close());
 
-closeDialogBtn.addEventListener('click', () => orderDialog.close());
-
-orderForm.addEventListener('submit', (event) => {
+el.orderForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  const formData = new FormData(orderForm);
-  const name = formData.get('name');
-  orderDialog.close();
-  alert(`Спасибо, ${name}! Заявка на сборку щита отправлена.`);
-  orderForm.reset();
+  const data = new FormData(el.orderForm);
+  const total = Number(el.grandTotal.textContent.replace(/[^\d]/g, ''));
+  state.orders.push({
+    id: uid('ord'),
+    name: String(data.get('name')),
+    phone: String(data.get('phone')),
+    comment: String(data.get('comment') || ''),
+    status: 'Новый',
+    total,
+    createdAt: new Date().toISOString(),
+  });
+  saveStore();
+  renderAdminLists();
+  el.orderDialog.close();
+  el.orderForm.reset();
+  alert('Заявка отправлена. Менеджер свяжется с вами.');
 });
+
+el.enclosureForm.addEventListener('submit', handleEnclosureSave);
+el.componentForm.addEventListener('submit', handleComponentSave);
+
+if (state.enclosures.length) state.enclosureId = state.enclosures[0].id;
+renderAll();
