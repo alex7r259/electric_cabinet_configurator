@@ -1,0 +1,7 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='120' height='200'>
+<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='#fffef9'/><stop offset='1' stop-color='#f0ece1'/></linearGradient></defs>
+<rect width='120' height='200' rx='8' fill='url(#g)'/>
+<text x='10' y='44' font-size='13' fill='#1f8f4f' font-family='Arial' font-weight='700'>Schneider</text>
+<rect x='32' y='95' width='52' height='58' rx='7' fill='#2c74b7'/>
+<circle cx='95' cy='115' r='9' fill='#dbe4ef'/>
+</svg>
