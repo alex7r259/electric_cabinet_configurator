@@ -60,6 +60,20 @@ body { margin: 0; font-family: Inter, Segoe UI, sans-serif; background: var(--bg
   background: rgba(145, 155, 169, 0.18);
   pointer-events: auto;
   border: 1px solid rgba(148, 163, 184, 0.5);
+  position: relative;
+  background-image: linear-gradient(#f3f4f6, #e5e7eb);
+}
+.rail-track::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 38px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to bottom, #9ca3af, #6b7280, #9ca3af);
+  opacity: .8;
+  pointer-events: none;
 }
 .rail-track.overflow {
   border: 2px solid #dc2626;
@@ -72,6 +86,7 @@ body { margin: 0; font-family: Inter, Segoe UI, sans-serif; background: var(--bg
   background: rgba(255,255,255,.08);
   position: relative;
   overflow: visible;
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.1);
 }
 .slot.drop-hover { outline: 2px solid #f8bf2d; background: rgba(248,191,45,.2); }
 .device {
@@ -82,19 +97,46 @@ body { margin: 0; font-family: Inter, Segoe UI, sans-serif; background: var(--bg
   border: 1px solid #bcc3ce;
   border-radius: 6px;
   background: linear-gradient(180deg, #fff, #eef2f7);
-  display: grid;
-  grid-template-columns: 40px 1fr auto;
-  align-items: center;
-  gap: 6px;
-  padding: 4px;
+  padding: 2px;
   font-size: 10px;
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(0,0,0,.25);
   pointer-events: auto;
   z-index: 2;
 }
-.device img { width: 36px; height: 44px; object-fit: cover; border-radius: 3px; }
-.device button { border: 0; background: transparent; color: #b42318; font-size: 16px; cursor: pointer; }
+.module-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.module-shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 -6px 8px rgba(0,0,0,0.25), inset 0 2px 2px rgba(255,255,255,0.3);
+  pointer-events: none;
+}
+.module-label {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  color: #111;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+}
+.module.abb.mcb .module-body { background-image: url('assets/img/modules/abb/mcb.svg'); }
+.module.abb.rcd .module-body { background-image: url('assets/img/modules/abb/rcd.svg'); }
+.module.schneider.mcb .module-body { background-image: url('assets/img/modules/schneider/mcb.svg'); }
+.module.schneider.rcd .module-body { background-image: url('assets/img/modules/schneider/rcd.svg'); }
+.module.generic.mcb .module-body { background-image: url('assets/img/modules/abb/mcb.svg'); filter: grayscale(.25); }
+.module.generic.rcd .module-body { background-image: url('assets/img/modules/abb/rcd.svg'); filter: grayscale(.25); }
+.device button { position: absolute; top: 0; right: 2px; border: 0; background: rgba(255,255,255,.75); color: #b42318; font-size: 14px; cursor: pointer; z-index: 3; border-radius: 4px; }
 
 .summary-lines { display: grid; gap: 8px; margin-bottom: 12px; }
 .summary-item { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; border-bottom: 1px dashed #dce2eb; padding-bottom: 6px; }

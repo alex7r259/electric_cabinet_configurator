@@ -113,6 +113,15 @@
           <form id="component-form" class="admin-form">
             <input name="name" placeholder="Название" required />
             <input name="category" placeholder="Категория (Автомат/УЗО...)" required />
+            <select name="brand">
+              <option value="abb">ABB</option>
+              <option value="schneider">Schneider</option>
+              <option value="generic">Generic</option>
+            </select>
+            <select name="textureType">
+              <option value="mcb">Текстура: автомат</option>
+              <option value="rcd">Текстура: УЗО/диф</option>
+            </select>
             <input name="modules" type="number" min="1" placeholder="Модули" required />
             <input name="price" type="number" min="0" placeholder="Цена" required />
             <input name="image" placeholder="URL фото компонента" />

@@ -25,9 +25,9 @@ const defaultEnclosures = [
 ];
 
 const defaultComponents = [
-  { id: 'br-abb-c16', name: 'Автомат ABB S201 C16', category: 'Автомат', modules: 1, price: 620, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
-  { id: 'uzo-abb-40', name: 'УЗО ABB F202 AC 40A 30mA', category: 'УЗО', modules: 2, price: 3200, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
-  { id: 'relay-zubr-d40', name: 'Реле напряжения ZUBR D40', category: 'Реле', modules: 2, price: 4250, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'br-abb-c16', name: 'Автомат ABB S201 C16', category: 'Автомат', brand: 'abb', textureType: 'mcb', modules: 1, price: 620, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'uzo-abb-40', name: 'УЗО ABB F202 AC 40A 30mA', category: 'УЗО', brand: 'abb', textureType: 'rcd', modules: 2, price: 3200, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'relay-zubr-d40', name: 'Реле напряжения ZUBR D40', category: 'Реле', brand: 'generic', textureType: 'mcb', modules: 2, price: 4250, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
 ];
 
 const state = {
@@ -231,6 +231,29 @@ function onSlotDrop(event, slotIndex) {
   renderUser();
 }
 
+function createModuleElement(cell, idx, slotGap) {
+  const device = document.createElement('div');
+  const rawBrand = (cell.brand || '').toString().toLowerCase();
+  const brand = rawBrand.includes('abb') ? 'abb' : rawBrand.includes('sch') ? 'schneider' : 'generic';
+  const textureType = cell.textureType || 'mcb';
+  const shortLabel = cell.name.length > 16 ? `${cell.name.slice(0, 16)}…` : cell.name;
+  device.className = `device module ${brand} ${textureType}`;
+  device.style.width = `calc(${cell.modules * 100}% + ${(cell.modules - 1) * slotGap}px)`;
+  device.draggable = true;
+  device.innerHTML = `
+    <div class="module-body"></div>
+    <div class="module-label">${shortLabel}</div>
+    <div class="module-shadow"></div>
+    <button type="button" title="Удалить">×</button>
+  `;
+  device.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', fromIndex: idx })));
+  device.querySelector('button').addEventListener('click', () => {
+    clearItem(cell.instanceKey);
+    renderUser();
+  });
+  return device;
+}
+
 function renderCabinet() {
   el.cabinet.innerHTML = '';
   const total = getCurrentEnclosure().modules;
@@ -261,16 +284,7 @@ function renderCabinet() {
       const idx = Number(slot.dataset.index);
       const cell = state.placements[idx];
       if (!cell?.anchor) return;
-      const device = document.createElement('div');
-      device.className = 'device';
-      device.style.width = `calc(${cell.modules * 100}% + ${(cell.modules - 1) * slotGap}px)`;
-      device.draggable = true;
-      device.innerHTML = `<img src="${cell.image || PLACEHOLDER}" alt="" /><div>${cell.name}<div style="color:#64748b">${cell.modules} мод.</div></div><button type="button">×</button>`;
-      device.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', fromIndex: idx })));
-      device.querySelector('button').addEventListener('click', () => {
-        clearItem(cell.instanceKey);
-        renderUser();
-      });
+      const device = createModuleElement(cell, idx, slotGap);
       slot.append(device);
     });
 
@@ -379,6 +393,8 @@ function fillComponentForm(item) {
   el.componentForm.dataset.editId = item.id;
   el.componentForm.name.value = item.name;
   el.componentForm.category.value = item.category;
+  el.componentForm.brand.value = item.brand || 'generic';
+  el.componentForm.textureType.value = item.textureType || 'mcb';
   el.componentForm.modules.value = item.modules;
   el.componentForm.price.value = item.price;
   el.componentForm.image.value = item.image || '';
@@ -424,6 +440,8 @@ async function handleComponentSave(event) {
     id: el.componentForm.dataset.editId || uid('cmpcat'),
     name: String(data.get('name')),
     category: String(data.get('category')),
+    brand: String(data.get('brand') || 'generic'),
+    textureType: String(data.get('textureType') || 'mcb'),
     modules: Number(data.get('modules')),
     price: Number(data.get('price')),
     image: imageFile || String(data.get('image') || '') || PLACEHOLDER,
