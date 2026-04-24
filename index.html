@@ -19,6 +19,7 @@
     <main class="layout">
       <aside class="panel panel-left">
         <h2>Добавить компонент</h2>
+        <p class="panel-note">Перетаскивайте компонент из списка на DIN-рейку в центре.</p>
         <div id="component-list" class="component-list"></div>
       </aside>
 
@@ -28,24 +29,8 @@
           <button class="mode" id="helper-mode">По нагрузке (помощник)</button>
         </div>
 
-        <article class="board-visual">
-          <h3>Порядок конфигурирования</h3>
-          <ol>
-            <li>Выберите корпус щита.</li>
-            <li>Укажите вводной автомат (фазы + расчет по нагрузке).</li>
-            <li>Добавьте наполнение: автоматы, УЗО, реле и т.д.</li>
-          </ol>
-          <div class="rails">
-            <div class="rail"></div>
-            <div class="rail"></div>
-            <div class="rail"></div>
-          </div>
-          <p class="hint">Подсказка: при превышении модулей появится предупреждение.</p>
-        </article>
-
         <section class="config-form">
           <h3>Параметры щита</h3>
-
           <label class="field">
             Корпус щита
             <select id="enclosure-select"></select>
@@ -59,7 +44,6 @@
                 <option value="3">3 фазы (380В)</option>
               </select>
             </label>
-
             <label class="field">
               Расчетная нагрузка, кВт
               <input id="load-input" type="number" min="1" max="150" value="15" />
@@ -69,6 +53,15 @@
           <div class="entry-breaker" id="entry-breaker-hint"></div>
           <button id="set-entry-breaker" class="btn secondary">Применить вводной автомат</button>
         </section>
+
+        <article class="board-visual">
+          <div class="board-topline">
+            <h3>Щит (drag & drop)</h3>
+            <span id="module-status"></span>
+          </div>
+          <div class="cabinet" id="cabinet"></div>
+          <p class="hint">Поддерживается перетаскивание из каталога на свободные модули и перемещение внутри щита.</p>
+        </article>
       </section>
 
       <aside class="panel panel-right">
@@ -88,7 +81,7 @@
     </main>
 
     <template id="component-card-template">
-      <button class="component-card" type="button">
+      <button class="component-card" type="button" draggable="true">
         <div class="title"></div>
         <div class="meta"></div>
         <div class="row">
