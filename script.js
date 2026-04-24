@@ -1,9 +1,27 @@
-const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380"><rect width="100%" height="100%" fill="#dbe3ef"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="28" fill="#64748b">Нет фото</text></svg>');
+const PLACEHOLDER_PANEL = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0f1f3"/><stop offset="100%" stop-color="#d9dde3"/>
+    </linearGradient>
+    <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a8b2bf"/><stop offset="50%" stop-color="#d6dde6"/><stop offset="100%" stop-color="#9ea9b7"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="#ececef"/>
+  <rect x="20" y="20" width="860" height="860" rx="12" fill="url(#bg)" stroke="#c9ced6" stroke-width="6"/>
+  <rect x="80" y="210" width="740" height="26" rx="6" fill="url(#rail)"/>
+  <rect x="80" y="420" width="740" height="26" rx="6" fill="url(#rail)"/>
+  <rect x="80" y="630" width="740" height="26" rx="6" fill="url(#rail)"/>
+  <rect x="150" y="800" width="240" height="24" rx="8" fill="#0f5b9b"/>
+  <rect x="510" y="800" width="240" height="24" rx="8" fill="#1f8d3d"/>
+</svg>`);
+const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="600" height="380"><rect width="100%" height="100%" fill="#dbe3ef"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="28" fill="#64748b">Нет фото компонента</text></svg>');
 
 const defaultEnclosures = [
-  { id: 'enc-12', name: 'Навесной, 12 модулей', modules: 12, price: 2800, image: PLACEHOLDER },
-  { id: 'enc-24', name: 'Навесной, 24 модуля', modules: 24, price: 4350, image: PLACEHOLDER },
-  { id: 'enc-36', name: 'Встраиваемый, 36 модулей', modules: 36, price: 6500, image: PLACEHOLDER },
+  { id: 'enc-12', name: 'Навесной, 12 модулей', modules: 12, price: 2800, image: PLACEHOLDER_PANEL },
+  { id: 'enc-24', name: 'Навесной, 24 модуля', modules: 24, price: 4350, image: PLACEHOLDER_PANEL },
+  { id: 'enc-36', name: 'Встраиваемый, 36 модулей', modules: 36, price: 6500, image: PLACEHOLDER_PANEL },
 ];
 
 const defaultComponents = [
@@ -373,7 +391,7 @@ async function handleEnclosureSave(event) {
     name: String(data.get('name')),
     modules: Number(data.get('modules')),
     price: Number(data.get('price')),
-    image: imageFile || String(data.get('image') || '') || PLACEHOLDER,
+    image: imageFile || String(data.get('image') || '') || PLACEHOLDER_PANEL,
   };
 
   if (el.enclosureForm.dataset.editId) state.enclosures = state.enclosures.map((x) => (x.id === item.id ? item : x));
@@ -421,7 +439,7 @@ function renderUser() {
   const suggestion = estimateEntryBreaker(Number(state.loadKw), Number(state.phases));
   el.entryBreakerHint.textContent = `Рекомендуемый вводной автомат: ${suggestion.name}.`; 
   el.overviewImage.src = state.selectedOverviewImage || PLACEHOLDER;
-  el.enclosurePhoto.src = getCurrentEnclosure().image || PLACEHOLDER;
+  el.enclosurePhoto.src = getCurrentEnclosure().image || PLACEHOLDER_PANEL;
 }
 
 function renderAll() {

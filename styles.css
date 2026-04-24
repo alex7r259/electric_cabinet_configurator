@@ -39,13 +39,31 @@ body { margin: 0; font-family: Inter, Segoe UI, sans-serif; background: var(--bg
 
 .board-visual { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: linear-gradient(180deg, #f8faff, #edf1f7); }
 .board-topline { display: flex; justify-content: space-between; align-items: center; }
-.enclosure-photo { width: 100%; height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid #ccd5e2; margin: 8px 0; background: #d6dde8; }
-.cabinet { border: 8px solid #e1e4ea; border-radius: 14px; background: #cfd5dd; padding: 12px; display: grid; gap: 10px; }
-.rail-track { min-height: 64px; background: linear-gradient(180deg, #adb8c9, #d4dce8, #adb8c9); border-radius: 7px; display: grid; gap: 4px; padding: 7px; }
-.slot { border: 1px dashed rgba(0,0,0,.25); border-radius: 6px; min-height: 50px; }
+.board-stage { position: relative; margin-top: 8px; }
+.enclosure-photo { width: 100%; height: 620px; object-fit: cover; border-radius: 10px; border: 1px solid #ccd5e2; background: #d6dde8; display: block; }
+.cabinet-overlay {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 17%;
+  bottom: 9%;
+  display: grid;
+  gap: 13%;
+  pointer-events: none;
+}
+.rail-track {
+  min-height: 64px;
+  border-radius: 7px;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  background: rgba(145, 155, 169, 0.18);
+  pointer-events: auto;
+}
+.slot { border: 1px dashed rgba(255,255,255,.7); border-radius: 6px; min-height: 50px; background: rgba(255,255,255,.08); }
 .slot.drop-hover { outline: 2px solid #f8bf2d; background: rgba(248,191,45,.2); }
-.device { border: 1px solid #bcc3ce; border-radius: 6px; background: linear-gradient(180deg, #fff, #eef2f7); min-height: 50px; display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 6px; padding: 4px; font-size: 11px; font-weight: 700; }
-.device img { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; }
+.device { border: 1px solid #bcc3ce; border-radius: 6px; background: linear-gradient(180deg, #fff, #eef2f7); min-height: 50px; display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 6px; padding: 4px; font-size: 10px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.25); pointer-events: auto; }
+.device img { width: 36px; height: 44px; object-fit: cover; border-radius: 3px; }
 .device button { border: 0; background: transparent; color: #b42318; font-size: 16px; cursor: pointer; }
 
 .summary-lines { display: grid; gap: 8px; margin-bottom: 12px; }
