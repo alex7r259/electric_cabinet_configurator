@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Конфигуратор электрического щита</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><span>ЩИТ</span> КОНФИГУРАТОР</div>
+      <nav class="steps">
+        <button class="step is-active">1. Выбор щита</button>
+        <button class="step">2. Конфигурация</button>
+        <button class="step">3. Проверка и заказ</button>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <aside class="panel panel-left">
+        <h2>Добавить компонент</h2>
+        <div id="component-list" class="component-list"></div>
+      </aside>
+
+      <section class="panel panel-center">
+        <div class="mode-switch">
+          <button class="mode is-active">Самостоятельно</button>
+          <button class="mode" id="helper-mode">По нагрузке (помощник)</button>
+        </div>
+
+        <article class="board-visual">
+          <h3>Порядок конфигурирования</h3>
+          <ol>
+            <li>Выберите корпус щита.</li>
+            <li>Укажите вводной автомат (фазы + расчет по нагрузке).</li>
+            <li>Добавьте наполнение: автоматы, УЗО, реле и т.д.</li>
+          </ol>
+          <div class="rails">
+            <div class="rail"></div>
+            <div class="rail"></div>
+            <div class="rail"></div>
+          </div>
+          <p class="hint">Подсказка: при превышении модулей появится предупреждение.</p>
+        </article>
+
+        <section class="config-form">
+          <h3>Параметры щита</h3>
+
+          <label class="field">
+            Корпус щита
+            <select id="enclosure-select"></select>
+          </label>
+
+          <div class="grid-2">
+            <label class="field">
+              Количество фаз
+              <select id="phase-select">
+                <option value="1">1 фаза (220В)</option>
+                <option value="3">3 фазы (380В)</option>
+              </select>
+            </label>
+
+            <label class="field">
+              Расчетная нагрузка, кВт
+              <input id="load-input" type="number" min="1" max="150" value="15" />
+            </label>
+          </div>
+
+          <div class="entry-breaker" id="entry-breaker-hint"></div>
+          <button id="set-entry-breaker" class="btn secondary">Применить вводной автомат</button>
+        </section>
+      </section>
+
+      <aside class="panel panel-right">
+        <h2>Конфигурация щита</h2>
+        <div id="summary-lines" class="summary-lines"></div>
+
+        <div class="totals">
+          <div><span>Итого по компонентам:</span><strong id="components-total">0 ₽</strong></div>
+          <div><span>Корпус щита:</span><strong id="enclosure-total">0 ₽</strong></div>
+          <div><span>Сборка и проверка:</span><strong id="assembly-total">0 ₽</strong></div>
+          <div class="grand"><span>ИТОГО:</span><strong id="grand-total">0 ₽</strong></div>
+        </div>
+
+        <button id="order-btn" class="btn primary">Далее: проверка и заказ</button>
+        <p class="safe">Гарантия на сборку 12 месяцев · Соответствие ГОСТ и ПУЭ</p>
+      </aside>
+    </main>
+
+    <template id="component-card-template">
+      <button class="component-card" type="button">
+        <div class="title"></div>
+        <div class="meta"></div>
+        <div class="row">
+          <span class="stock">В наличии</span>
+          <strong class="price"></strong>
+        </div>
+      </button>
+    </template>
+
+    <dialog id="order-dialog">
+      <form method="dialog" class="order-form" id="order-form">
+        <h3>Оформить заказ на сборку</h3>
+        <label>Имя <input name="name" required /></label>
+        <label>Телефон <input name="phone" required placeholder="+7 (___) ___-__-__" /></label>
+        <label>Комментарий <textarea name="comment"></textarea></label>
+        <menu>
+          <button value="cancel" class="btn secondary" type="button" id="close-dialog">Отмена</button>
+          <button class="btn primary" type="submit">Отправить заявку</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <script src="script.js"></script>
+  </body>
+</html>
