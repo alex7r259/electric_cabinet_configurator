@@ -78,6 +78,8 @@
       <aside class="panel panel-right">
         <h2>Конфигурация щита</h2>
         <div id="summary-lines" class="summary-lines"></div>
+        <div id="validation" class="validation-box"></div>
+        <div id="suggestions" class="suggestions-box"></div>
 
         <div class="totals">
           <div><span>Итого по компонентам:</span><strong id="components-total">0 ₽</strong></div>
@@ -121,6 +123,15 @@
             <select name="textureType">
               <option value="mcb">Текстура: автомат</option>
               <option value="rcd">Текстура: УЗО/диф</option>
+            </select>
+            <select name="schemeType">
+              <option value="mcb16">Схема: линия C16</option>
+              <option value="mcb10">Схема: линия C10</option>
+              <option value="mcb32">Схема: плита C32</option>
+              <option value="rcd">Схема: УЗО</option>
+              <option value="relay">Схема: реле напряжения</option>
+              <option value="washer">Схема: стиральная машина</option>
+              <option value="boiler">Схема: бойлер</option>
             </select>
             <input name="modules" type="number" min="1" placeholder="Модули" required />
             <input name="price" type="number" min="0" placeholder="Цена" required />

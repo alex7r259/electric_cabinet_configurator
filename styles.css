@@ -140,6 +140,11 @@ body { margin: 0; font-family: Inter, Segoe UI, sans-serif; background: var(--bg
 
 .summary-lines { display: grid; gap: 8px; margin-bottom: 12px; }
 .summary-item { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; border-bottom: 1px dashed #dce2eb; padding-bottom: 6px; }
+.validation-box, .suggestions-box { display: grid; gap: 6px; margin: 8px 0 12px; }
+.error { color: #b42318; background: #fdecea; padding: 8px; border-radius: 8px; font-size: 13px; }
+.warning { color: #b54708; background: #fff4e5; padding: 8px; border-radius: 8px; font-size: 13px; }
+.ok { color: #027a48; background: #ecfdf3; padding: 8px; border-radius: 8px; font-size: 13px; }
+.suggestion-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px; border: 1px solid #d0d9e5; border-radius: 8px; background: #f8fafc; font-size: 13px; }
 .totals { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 7px; }
 .totals > div { display: flex; justify-content: space-between; }
 .totals .grand { font-size: 28px; color: #0b4ea2; font-weight: 900; }

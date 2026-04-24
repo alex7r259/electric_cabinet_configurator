@@ -25,9 +25,9 @@ const defaultEnclosures = [
 ];
 
 const defaultComponents = [
-  { id: 'br-abb-c16', name: 'Автомат ABB S201 C16', category: 'Автомат', brand: 'abb', textureType: 'mcb', modules: 1, price: 620, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
-  { id: 'uzo-abb-40', name: 'УЗО ABB F202 AC 40A 30mA', category: 'УЗО', brand: 'abb', textureType: 'rcd', modules: 2, price: 3200, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
-  { id: 'relay-zubr-d40', name: 'Реле напряжения ZUBR D40', category: 'Реле', brand: 'generic', textureType: 'mcb', modules: 2, price: 4250, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'br-abb-c16', name: 'Автомат ABB S201 C16', category: 'Автомат', brand: 'abb', textureType: 'mcb', schemeType: 'mcb16', modules: 1, price: 620, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'uzo-abb-40', name: 'УЗО ABB F202 AC 40A 30mA', category: 'УЗО', brand: 'abb', textureType: 'rcd', schemeType: 'rcd', modules: 2, price: 3200, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
+  { id: 'relay-zubr-d40', name: 'Реле напряжения ZUBR D40', category: 'Реле', brand: 'generic', textureType: 'mcb', schemeType: 'relay', modules: 2, price: 4250, image: PLACEHOLDER, overviewImage: PLACEHOLDER },
 ];
 
 const state = {
@@ -62,6 +62,8 @@ const el = {
   enclosurePhoto: document.querySelector('#enclosure-photo'),
   moduleStatus: document.querySelector('#module-status'),
   summaryLines: document.querySelector('#summary-lines'),
+  validation: document.querySelector('#validation'),
+  suggestions: document.querySelector('#suggestions'),
   componentsTotal: document.querySelector('#components-total'),
   enclosureTotal: document.querySelector('#enclosure-total'),
   assemblyTotal: document.querySelector('#assembly-total'),
@@ -142,7 +144,133 @@ function estimateEntryBreaker(loadKw, phases) {
   const current = Math.ceil((loadKw * 1000) / (voltage * (phases === 3 ? 1.73 : 1)));
   const nominal = [16, 20, 25, 32, 40, 50, 63, 80, 100].find((n) => current <= n) || 100;
   const poles = phases === 3 ? 3 : 2;
-  return { id: uid('entry'), name: `Вводной автомат ${poles}P C${nominal}`, modules: poles, price: 900 + nominal * 8 + poles * 120 };
+  return { id: uid('entry'), name: `Вводной автомат ${poles}P C${nominal}`, modules: poles, price: 900 + nominal * 8 + poles * 120, schemeType: `main${nominal}` };
+}
+
+function inferSchemeType(item) {
+  if (item.schemeType) return item.schemeType;
+  const n = (item.name || '').toLowerCase();
+  const c = (item.category || '').toLowerCase();
+  if (n.includes('узо') || c.includes('узо')) return 'rcd';
+  if (n.includes('реле') || c.includes('реле')) return 'relay';
+  if (n.includes('c32')) return 'mcb32';
+  if (n.includes('c10')) return 'mcb10';
+  return 'mcb16';
+}
+
+function buildSchemeItems() {
+  const list = [];
+  if (state.entryBreaker) {
+    list.push({ type: state.entryBreaker.schemeType || 'main40', width: state.entryBreaker.modules, source: 'entry' });
+  }
+  state.placements.forEach((cell) => {
+    if (!cell?.anchor) return;
+    list.push({ type: inferSchemeType(cell), width: cell.modules, source: cell.id });
+  });
+  return list;
+}
+
+function calcLoad(items) {
+  let load = 0;
+  items.forEach((i) => {
+    if (i.type === 'mcb10') load += 1;
+    if (i.type === 'mcb16') load += 2;
+    if (i.type === 'mcb32') load += 5;
+  });
+  return load;
+}
+
+function validateScheme(items, modulesLimit) {
+  const errors = [];
+  const warnings = [];
+
+  if (!items[0] || !items[0].type.includes('main')) {
+    errors.push('Вводной автомат должен быть первым в щите');
+  }
+
+  const rcdIndex = items.findIndex((i) => i.type.includes('rcd'));
+  if (rcdIndex === -1) {
+    errors.push('Нет УЗО');
+  } else if (rcdIndex < 1) {
+    errors.push('УЗО должно идти после вводного автомата');
+  }
+
+  const hasProtection = rcdIndex !== -1;
+  items.forEach((i) => {
+    if (i.type.includes('mcb') && !hasProtection) {
+      errors.push('Линии без УЗО — небезопасно');
+    }
+  });
+
+  const load = calcLoad(items);
+  const main = items.find((i) => i.type.includes('main'));
+  if (main?.type === 'main40' && load > 10) {
+    warnings.push('Возможна перегрузка вводного автомата 40A');
+  }
+
+  const hasStove = items.some((i) => i.type === 'mcb32');
+  if (hasStove) {
+    const separate = items.filter((i) => i.type === 'mcb32').length;
+    if (separate < 1) {
+      errors.push('Плита должна быть на отдельной линии');
+    }
+  }
+
+  const wetLoads = ['washer', 'boiler'];
+  wetLoads.forEach((type) => {
+    if (items.some((i) => i.type === type) && !items.some((i) => i.type.includes('rcd'))) {
+      errors.push('Мокрые зоны должны быть защищены УЗО');
+    }
+  });
+
+  if (items.length > 6 && !items.some((i) => i.type === 'relay')) {
+    warnings.push('Рекомендуется установить реле напряжения');
+  }
+
+  const totalWidth = items.reduce((s, i) => s + (i.width || 1), 0);
+  if (totalWidth > modulesLimit) {
+    errors.push('Щит переполнен — выберите корпус больше');
+  }
+
+  return { errors, warnings };
+}
+
+function addItemBySchemeType(schemeType) {
+  const item = state.components.find((x) => inferSchemeType(x) === schemeType);
+  if (!item) return;
+  const idx = state.placements.findIndex((x) => !x);
+  if (idx >= 0 && canPlace(item, idx)) {
+    putItem(item, idx);
+    renderUser();
+  }
+}
+
+function renderValidationAndSuggestions() {
+  const items = buildSchemeItems();
+  const result = validateScheme(items, getCurrentEnclosure().modules);
+  el.validation.innerHTML = '';
+  el.suggestions.innerHTML = '';
+
+  result.errors.forEach((e) => { el.validation.innerHTML += `<div class="error">❌ ${e}</div>`; });
+  result.warnings.forEach((w) => { el.validation.innerHTML += `<div class="warning">⚠️ ${w}</div>`; });
+  if (!result.errors.length && !result.warnings.length) {
+    el.validation.innerHTML = '<div class="ok">✅ Схема выглядит корректно.</div>';
+  }
+
+  const suggestions = [];
+  if (!items.some((i) => i.type === 'relay')) {
+    suggestions.push({ text: 'Добавить реле напряжения', type: 'relay' });
+  }
+  if (!items.some((i) => i.type.includes('rcd'))) {
+    suggestions.push({ text: 'Добавить УЗО', type: 'rcd' });
+  }
+  suggestions.forEach((s) => {
+    const row = document.createElement('div');
+    row.className = 'suggestion-item';
+    row.innerHTML = `<span>${s.text}</span><button class="btn secondary" type="button">Добавить</button>`;
+    row.querySelector('button').addEventListener('click', () => addItemBySchemeType(s.type));
+    el.suggestions.append(row);
+  });
 }
 
 function visibleComponents() {
@@ -395,6 +523,7 @@ function fillComponentForm(item) {
   el.componentForm.category.value = item.category;
   el.componentForm.brand.value = item.brand || 'generic';
   el.componentForm.textureType.value = item.textureType || 'mcb';
+  el.componentForm.schemeType.value = item.schemeType || inferSchemeType(item);
   el.componentForm.modules.value = item.modules;
   el.componentForm.price.value = item.price;
   el.componentForm.image.value = item.image || '';
@@ -442,6 +571,7 @@ async function handleComponentSave(event) {
     category: String(data.get('category')),
     brand: String(data.get('brand') || 'generic'),
     textureType: String(data.get('textureType') || 'mcb'),
+    schemeType: String(data.get('schemeType') || 'mcb16'),
     modules: Number(data.get('modules')),
     price: Number(data.get('price')),
     image: imageFile || String(data.get('image') || '') || PLACEHOLDER,
@@ -465,6 +595,7 @@ function renderUser() {
   renderCabinet();
   renderSummary();
   renderTotals();
+  renderValidationAndSuggestions();
 
   const suggestion = estimateEntryBreaker(Number(state.loadKw), Number(state.phases));
   el.entryBreakerHint.textContent = `Рекомендуемый вводной автомат: ${suggestion.name}.`; 
