@@ -235,39 +235,51 @@ function renderCabinet() {
   el.cabinet.innerHTML = '';
   const total = getCurrentEnclosure().modules;
   const rows = Math.ceil(total / MODULES_PER_ROW);
+  const slotGap = 4;
   for (let row = 0; row < rows; row += 1) {
     const rail = document.createElement('div');
     rail.className = 'rail-track';
-    rail.style.gridTemplateColumns = `repeat(${MODULES_PER_ROW}, minmax(0,1fr))`;
+    const colsInRow = Math.min(MODULES_PER_ROW, total - row * MODULES_PER_ROW);
+    rail.style.gridTemplateColumns = `repeat(${colsInRow}, minmax(0,1fr))`;
 
+    const rowSlots = [];
     for (let col = 0; col < MODULES_PER_ROW; col += 1) {
       const idx = row * MODULES_PER_ROW + col;
       if (idx >= total) break;
-      const cell = state.placements[idx];
-      if (cell?.anchor) {
-        const device = document.createElement('div');
-        device.className = 'device';
-        device.style.gridColumn = `span ${cell.modules}`;
-        device.draggable = true;
-        device.innerHTML = `<img src="${cell.image || PLACEHOLDER}" alt="" /><div>${cell.name}<div style="color:#64748b">${cell.modules} мод.</div></div><button type="button">×</button>`;
-        device.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', fromIndex: idx })));
-        device.querySelector('button').addEventListener('click', () => {
-          clearItem(cell.instanceKey);
-          renderUser();
-        });
-        rail.append(device);
-        col += cell.modules - 1;
-      } else if (!cell) {
-        const slot = document.createElement('div');
-        slot.className = 'slot';
-        slot.addEventListener('dragover', (e) => e.preventDefault());
-        slot.addEventListener('dragenter', () => slot.classList.add('drop-hover'));
-        slot.addEventListener('dragleave', () => slot.classList.remove('drop-hover'));
-        slot.addEventListener('drop', (e) => onSlotDrop(e, idx));
-        rail.append(slot);
-      }
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+      slot.dataset.index = String(idx);
+      slot.addEventListener('dragover', (e) => e.preventDefault());
+      slot.addEventListener('dragenter', () => slot.classList.add('drop-hover'));
+      slot.addEventListener('dragleave', () => slot.classList.remove('drop-hover'));
+      slot.addEventListener('drop', (e) => onSlotDrop(e, idx));
+      rowSlots.push(slot);
+      rail.append(slot);
     }
+
+    rowSlots.forEach((slot) => {
+      const idx = Number(slot.dataset.index);
+      const cell = state.placements[idx];
+      if (!cell?.anchor) return;
+      const device = document.createElement('div');
+      device.className = 'device';
+      device.style.width = `calc(${cell.modules * 100}% + ${(cell.modules - 1) * slotGap}px)`;
+      device.draggable = true;
+      device.innerHTML = `<img src="${cell.image || PLACEHOLDER}" alt="" /><div>${cell.name}<div style="color:#64748b">${cell.modules} мод.</div></div><button type="button">×</button>`;
+      device.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'placed', fromIndex: idx })));
+      device.querySelector('button').addEventListener('click', () => {
+        clearItem(cell.instanceKey);
+        renderUser();
+      });
+      slot.append(device);
+    });
+
     el.cabinet.append(rail);
+  }
+
+  const used = (state.entryBreaker?.modules || 0) + state.placements.filter(Boolean).length;
+  if (used > total) {
+    el.cabinet.querySelectorAll('.rail-track').forEach((rail) => rail.classList.add('overflow'));
   }
 }
 
